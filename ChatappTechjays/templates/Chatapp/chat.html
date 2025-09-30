@@ -1,0 +1,316 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT Clone</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f5f5f5;
+      color: #333;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Navbar */
+    .navbar {
+      background-color: #202123;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      flex-wrap: wrap;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin-left: 20px;
+      font-size: 15px;
+      transition: color 0.3s ease;
+    }
+
+    .navbar a:hover {
+      color: #10a37f;
+    }
+
+    /* Layout */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #2d2d2f;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar h2 {
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+
+    .sidebar button {
+      background: #3e3f42;
+      color: white;
+      border: none;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      text-align: left;
+    }
+
+    .sidebar button:hover {
+      background: #10a37f;
+    }
+
+    /* Chat Container */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      min-width: 0; /* prevents overflow on small screens */
+    }
+
+    /* Chat Box */
+    .chat-box {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .message {
+      display: flex;
+      margin-bottom: 15px;
+    }
+
+    .message.bot .bubble {
+      background: #e8e8ed;
+      align-self: flex-start;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.user .bubble {
+      background: #10a37f;
+      color: white;
+      align-self: flex-end;
+    }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 12px;
+      max-width: 75%;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    /* Input Area */
+    .input-area {
+      display: flex;
+      padding: 15px;
+      background: #f0f0f0;
+      border-top: 1px solid #ddd;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+      min-width: 0;
+    }
+
+    .input-area button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #10a37f;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .input-area button:hover {
+      background: #0d8c6a;
+    }
+
+    /* 📱 Responsiveness */
+    @media (max-width: 992px) {
+      .sidebar {
+        width: 200px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none; /* hide sidebar */
+      }
+
+      .chat-container {
+        flex: 1;
+      }
+
+      .bubble {
+        max-width: 90%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .navbar a {
+        margin: 5px 0;
+        font-size: 14px;
+      }
+
+      .input-area {
+        flex-direction: column;
+      }
+
+      .input-area input {
+        width: 100%;
+      }
+
+      .input-area button {
+        width: 100%;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div class="logo">ChatGPT Clone</div>
+    <div>
+      <a href="{% url 'profile' %}">Profile</a>
+      <a href="{% url 'signout' %}">Signout</a>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <h2>Menu</h2>
+      <button>New Chat</button>
+      <button>History 1</button>
+      <button>History 2</button>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-container">
+      <div class="chat-box">
+        <!-- Start empty, no default messages -->
+      </div>
+      <!-- Input -->
+      <div class="input-area">
+        <input type="text" placeholder="Type your message...">
+        <button class="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+  <script>
+    console.log("Custom JS loaded ✅");
+
+    const sendBtn = document.querySelector(".sendBtn");
+    const inputField = document.querySelector(".input-area input");
+    const chatBox = document.querySelector(".chat-box");
+
+    // Send message on button click or Enter key
+    sendBtn.addEventListener("click", sendMessage);
+    inputField.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendMessage();
+    });
+
+    function sendMessage() {
+        const message = inputField.value.trim();
+        if (!message) return;
+
+        // Show user message
+        addMessageToChat("user", message);
+
+        inputField.value = ""; // Clear input
+
+        // Send message to Django
+        postJson({ message: message });
+    }
+
+    function addMessageToChat(sender, text) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", sender);
+        messageDiv.innerHTML = `<div class="bubble">${text}</div>`;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function postJson(data) {
+        try {
+            const response = await fetch("/getvalue/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                credentials: "include",
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (result.reply) addMessageToChat("bot", result.reply);
+
+        } catch (error) {
+            console.error("Error:", error);
+            addMessageToChat("bot", "Error: Could not get response.");
+        }
+    }
+
+    // CSRF helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+  </script>
+</body>
+</html>
